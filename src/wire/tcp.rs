@@ -555,12 +555,12 @@ impl<T: AsRef<[u8]> + AsMut<[u8]>> Packet<T> {
     /// # Panics
     /// This function panics unless `src_addr` and `dst_addr` belong to the same family,
     /// and that family is IPv4 or IPv6.
-    pub fn fill_checksum(&mut self, src_addr: &IpAddress, dst_addr: &IpAddress) {
+    pub fn fill_checksum(&mut self, src_addr: &IpAddress, dst_addr: &IpAddress, length: u32) {
         self.set_checksum(0);
         let checksum = {
             let data = self.buffer.as_ref();
             !checksum::combine(&[
-                checksum::pseudo_header(src_addr, dst_addr, IpProtocol::Tcp, data.len() as u32),
+                checksum::pseudo_header(src_addr, dst_addr, IpProtocol::Tcp, length),
                 checksum::data(data),
             ])
         };
@@ -962,7 +962,7 @@ impl<'a> Repr<'a> {
         packet.payload_mut()[..self.payload.len()].copy_from_slice(self.payload);
 
         if checksum_caps.tcp.tx() {
-            packet.fill_checksum(src_addr, dst_addr)
+            packet.fill_checksum(src_addr, dst_addr, self.buffer_len() as u32)
         } else {
             // make sure we get a consistently zeroed checksum,
             // since implementations might rely on it
@@ -1147,7 +1147,8 @@ mod test {
         packet.set_checksum(0xEEEE);
         packet.options_mut().copy_from_slice(&OPTION_BYTES[..]);
         packet.payload_mut().copy_from_slice(&PAYLOAD_BYTES[..]);
-        packet.fill_checksum(&SRC_ADDR.into(), &DST_ADDR.into());
+        let a: &[u8] = packet.buffer.as_ref();
+        packet.fill_checksum(&SRC_ADDR.into(), &DST_ADDR.into(), a.len() as u32);
         assert_eq!(&*packet.into_inner(), &PACKET_BYTES[..]);
     }
 
