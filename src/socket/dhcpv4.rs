@@ -113,10 +113,10 @@ pub struct RetryConfig {
 impl Default for RetryConfig {
     fn default() -> Self {
         Self {
-            discover_timeout: Duration::from_secs(10),
-            initial_request_timeout: Duration::from_secs(5),
+            discover_timeout: Duration::from_secs(1),
+            initial_request_timeout: Duration::from_secs(1),
             request_retries: 5,
-            min_renew_timeout: Duration::from_secs(60),
+            min_renew_timeout: Duration::from_secs(6),
         }
     }
 }
